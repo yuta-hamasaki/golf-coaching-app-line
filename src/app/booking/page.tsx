@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { LineLinkSection } from "@/components/auth/line-link-section";
 import { LogoutButton } from "@/components/auth/logout-button";
+import { BookingFlow } from "@/components/booking/booking-flow";
+import type { SlotOption } from "@/components/booking/availability-selector";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,16 +12,27 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getSessionUserId } from "@/lib/session";
+import { getOpenAvailabilitySlotsForDate } from "@/lib/availability";
 import { prisma } from "@/lib/prisma";
+import { getSessionUserId } from "@/lib/session";
 
-type BookingPageProps = {
-  searchParams: Promise<{ linked?: string }>;
-};
+function getDateRange(days: number): string[] {
+  const dates: string[] = [];
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tokyo",
+  });
 
-export default async function BookingPage({ searchParams }: BookingPageProps) {
+  for (let i = 0; i < days; i++) {
+    const date = new Date();
+    date.setDate(date.getDate() + i);
+    dates.push(formatter.format(date));
+  }
+
+  return dates;
+}
+
+export default async function BookingPage() {
   const userId = await getSessionUserId();
-  const { linked } = await searchParams;
 
   if (!userId) {
     redirect("/login");
@@ -28,67 +40,65 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { name: true, email: true, googleId: true, lineUserId: true },
+    select: { name: true },
   });
 
   if (!user) {
     redirect("/login?error=oauth_user_failed");
   }
 
-  const loginMethod = user.googleId
-    ? user.lineUserId
-      ? "Google + LINE連携"
-      : "Google"
-    : user.lineUserId
-      ? "LINE"
-      : "不明";
+  const [plans, dateRange] = await Promise.all([
+    prisma.lessonPlan.findMany({
+      where: { isActive: true },
+      orderBy: { price: "asc" },
+    }),
+    Promise.resolve(getDateRange(14)),
+  ]);
+
+  const slotsByDate: Record<string, SlotOption[]> = {};
+  const now = new Date();
+
+  await Promise.all(
+    dateRange.map(async (date) => {
+      const slots = await getOpenAvailabilitySlotsForDate(date);
+      slotsByDate[date] = slots
+        .filter((slot) => slot.startTime > now)
+        .map((slot) => ({
+          id: slot.id,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          coach: slot.coach,
+        }));
+    }),
+  );
+
+  const initialDate =
+    dateRange.find((date) => (slotsByDate[date]?.length ?? 0) > 0) ??
+    dateRange[0];
 
   return (
     <main className="min-h-full bg-emerald-50/40 px-4 py-10">
-      <div className="mx-auto max-w-lg space-y-4">
-        {linked === "line" ? (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-            LINEアカウントの連携が完了しました。
-          </div>
-        ) : null}
-        {linked === "google" ? (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-            Googleアカウントの連携が完了しました。
-          </div>
-        ) : null}
-
+      <div className="mx-auto max-w-2xl space-y-4">
         <Card>
           <CardHeader>
-            <CardTitle>予約ページ</CardTitle>
+            <CardTitle>レッスン予約</CardTitle>
             <CardDescription>
-              ログインに成功しました。ここからレッスン予約機能を実装します。
+              {user.name} さん、プランと日時を選択してください
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-              <p>
-                <span className="font-medium">名前：</span>
-                {user.name}
-              </p>
-              {user.email ? (
-                <p className="mt-1">
-                  <span className="font-medium">メール：</span>
-                  {user.email}
-                </p>
-              ) : null}
-              <p className="mt-1">
-                <span className="font-medium">ログイン方法：</span>
-                {loginMethod}
-              </p>
+          <CardContent className="space-y-6">
+            <BookingFlow
+              plans={plans}
+              initialDate={initialDate}
+              slotsByDate={slotsByDate}
+            />
+
+            <div className="flex flex-col gap-2 border-t border-emerald-100 pt-4">
+              <Button asChild variant="outline" className="w-full">
+                <Link href="/">トップページに戻る</Link>
+              </Button>
+              <LogoutButton />
             </div>
-
-            <LineLinkSection isLinked={Boolean(user.lineUserId)} />
-
-            <Button asChild variant="outline" className="w-full">
-              <Link href="/">トップページに戻る</Link>
-            </Button>
-
-            <LogoutButton />
           </CardContent>
         </Card>
       </div>
