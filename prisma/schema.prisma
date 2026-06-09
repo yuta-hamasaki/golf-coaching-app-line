@@ -45,13 +45,15 @@ enum NotificationStatus {
 // ---------------------------------------------------------------------------
 
 model User {
-  id          String   @id @default(cuid())
-  name        String
-  email       String?  @unique
-  phone       String?
-  lineUserId  String?  @unique @map("line_user_id")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id           String   @id @default(cuid())
+  name         String
+  email        String?  @unique
+  passwordHash String?  @map("password_hash")
+  googleId     String?  @unique @map("google_id")
+  phone        String?
+  lineUserId   String?  @unique @map("line_user_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   bookings          Booking[]
   lineNotifications LineNotification[]
