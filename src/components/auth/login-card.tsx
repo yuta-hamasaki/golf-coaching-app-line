@@ -1,6 +1,5 @@
 "use client";
 
-import { GoogleLoginButton } from "@/components/auth/google-login-button";
 import { LineAuthOptions } from "@/components/auth/line-auth-options";
 import {
   Card,
@@ -19,7 +18,6 @@ const ERROR_MESSAGES: Record<string, string> = {
   oauth_failed: "ログイン処理中にエラーが発生しました。",
   oauth_config_failed: "LINEログイン設定に不備があります。管理者にお問い合わせください。",
   oauth_link_requires_login: "連携には先にログインが必要です。",
-  google_already_linked: "このGoogleアカウントは既に別のユーザーに連携されています。",
   line_already_linked: "このLINEアカウントは既に別のユーザーに連携されています。",
   liff_sync_failed: "LINEアプリからのログインに失敗しました。",
 };
@@ -36,7 +34,7 @@ export function LoginCard({ error }: LoginCardProps) {
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">ログイン</CardTitle>
         <CardDescription className="text-base">
-          LINEまたはGoogleアカウントで予約を開始
+          LINEアカウントで予約を開始
         </CardDescription>
       </CardHeader>
 
@@ -57,22 +55,6 @@ export function LoginCard({ error }: LoginCardProps) {
           <LineAuthOptions mode="login" prominent />
           <p className="text-center text-xs text-emerald-800/70">
             初めての方も、LINEアカウントを選ぶだけで自動登録されます
-          </p>
-        </div>
-
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-emerald-100" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-2 text-emerald-600">または</span>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <GoogleLoginButton />
-          <p className="text-center text-xs text-emerald-800/70">
-            Googleアカウントでもログインできます
           </p>
         </div>
       </CardContent>

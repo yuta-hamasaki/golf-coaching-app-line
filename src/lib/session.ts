@@ -3,8 +3,6 @@ import { cookies } from "next/headers";
 export const SESSION_COOKIE_NAME = "session_user_id";
 export const OAUTH_STATE_COOKIE_NAME = "line_oauth_state";
 export const OAUTH_MODE_COOKIE_NAME = "line_oauth_mode";
-export const GOOGLE_OAUTH_STATE_COOKIE_NAME = "google_oauth_state";
-export const GOOGLE_OAUTH_MODE_COOKIE_NAME = "google_oauth_mode";
 
 const baseCookieOptions = {
   httpOnly: true,
