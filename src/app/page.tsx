@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { LoginContent } from "@/components/auth/login-content";
 import { HeroSection } from "@/components/home/hero-section";
 import { FeaturesSection } from "@/components/home/features-section";
 import { BookingFlowSection } from "@/components/home/booking-flow-section";

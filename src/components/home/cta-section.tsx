@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Globe, Smartphone } from "lucide-react";
+import { Bell, Smartphone } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -66,29 +66,29 @@ export function CtaSection() {
 
         <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-white to-emerald-50 p-8 shadow-sm sm:p-10">
           <h2 className="text-center text-2xl font-bold text-emerald-950">
-            Googleログインが基本、LINE連携は任意
+            LINEログインでかんたん予約
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-emerald-800/80">
-            Googleアカウントでログインするだけ。
-            LINE連携すると予約通知をLINEで受け取れます。
+            LINEアカウントでログインするだけ。
+            初回は自動登録され、予約へスムーズに進めます。
           </p>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             <div className="flex items-start gap-3 rounded-2xl bg-white p-5 shadow-sm">
-              <Globe className="mt-0.5 size-5 shrink-0 text-emerald-600" />
+              <Smartphone className="mt-0.5 size-5 shrink-0 text-emerald-600" />
               <div>
-                <p className="font-semibold text-emerald-950">Googleログイン</p>
+                <p className="font-semibold text-emerald-950">LINEログイン</p>
                 <p className="mt-1 text-sm text-emerald-800/75">
-                  どのブラウザからでもGoogleアカウントで安全にログインできます。
+                  LINEアカウントで安全にログインし、すぐに予約を開始できます。
                 </p>
               </div>
             </div>
             <div className="flex items-start gap-3 rounded-2xl bg-white p-5 shadow-sm">
-              <Smartphone className="mt-0.5 size-5 shrink-0 text-emerald-600" />
+              <Bell className="mt-0.5 size-5 shrink-0 text-emerald-600" />
               <div>
-                <p className="font-semibold text-emerald-950">LINE連携（任意）</p>
+                <p className="font-semibold text-emerald-950">予約通知</p>
                 <p className="mt-1 text-sm text-emerald-800/75">
-                  連携後は予約通知をLINEで受け取れます。未連携でも予約できます。
+                  予約に関するお知らせをLINEで確認できます。
                 </p>
               </div>
             </div>
@@ -96,7 +96,7 @@ export function CtaSection() {
 
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button asChild size="lg" className="w-full sm:w-auto">
-              <Link href="/login">Googleでログインして予約</Link>
+              <Link href="/login">LINEでログインして予約</Link>
             </Button>
           </div>
         </div>
