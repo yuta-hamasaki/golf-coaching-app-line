@@ -4,6 +4,7 @@ import {
 } from "@/actions/admin/availability";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { AvailabilityForm } from "@/components/admin/availability-form";
+import { BulkAvailabilityForm } from "@/components/admin/bulk-availability-form";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,52 +17,49 @@ import {
   getAllAvailabilitySlots,
   slotHasActiveBooking,
 } from "@/lib/availability";
+import { getOrCreateCoachForAdmin } from "@/lib/admin-coach";
 import { requireAdmin } from "@/lib/admin-session";
-import { prisma } from "@/lib/prisma";
 
 export default async function AdminAvailabilityPage() {
   const admin = await requireAdmin();
-  const [slots, coaches] = await Promise.all([
-    getAllAvailabilitySlots(),
-    prisma.coach.findMany({
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    }),
-  ]);
+  const coach = await getOrCreateCoachForAdmin(admin);
+  const coaches = [{ id: coach.id, name: coach.name }];
+  const slots = await getAllAvailabilitySlots(coach.id);
 
   return (
     <AdminLayout adminEmail={admin.email}>
       <div className="space-y-6">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">空き枠管理</h2>
+          <h2 className="text-xl font-bold text-slate-900">空き時間設定</h2>
           <p className="text-sm text-slate-600">
-            コーチの予約可能時間を設定します
+            管理者とコーチを統合し、ログイン中のコーチ（{coach.name}）の予約可能時間だけを管理します。
           </p>
         </div>
 
-        {coaches.length === 0 ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            コーチが登録されていません。先にデータベースへコーチを追加してください。
+        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>まとめて空き枠作成</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <BulkAvailabilityForm />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>単発の空き枠作成</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AvailabilityForm coaches={coaches} hideCoachSelect />
+              </CardContent>
+            </Card>
           </div>
-        ) : null}
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>新規空き枠作成</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {coaches.length > 0 ? (
-                <AvailabilityForm coaches={coaches} />
-              ) : (
-                <p className="text-sm text-slate-500">コーチ登録後に作成できます</p>
-              )}
-            </CardContent>
-          </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>空き枠一覧 ({slots.length})</CardTitle>
+              <CardTitle>あなたの空き枠一覧 ({slots.length})</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {slots.length === 0 ? (
@@ -78,9 +76,6 @@ export default async function AdminAvailabilityPage() {
                         <div>
                           <p className="font-semibold">
                             {formatSlotDateTime(slot.startTime)}
-                          </p>
-                          <p className="mt-1 text-sm text-slate-600">
-                            コーチ: {slot.coach.name}
                           </p>
                           <p className="mt-1 text-xs text-slate-500">
                             {slot.isOpen ? "受付中" : "停止中"}
@@ -132,6 +127,7 @@ export default async function AdminAvailabilityPage() {
                         <div className="mt-3">
                           <AvailabilityForm
                             coaches={coaches}
+                            hideCoachSelect
                             slot={{
                               id: slot.id,
                               coachId: slot.coachId,
