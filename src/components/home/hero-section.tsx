@@ -23,13 +23,12 @@ export function HeroSection() {
         <p className="mt-6 text-base leading-7 text-emerald-800/80 sm:text-lg">
           Googleアカウントでかんたんログイン。
           LINE連携は任意で、通知受け取りにも便利です。
-          スイング改善からコース戦略まで、
           あなたのゴルフを次のステージへ。
         </p>
 
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Button asChild size="lg" className="w-full sm:w-auto">
-            <Link href="/login">Googleでログインして予約</Link>
+            <Link href="/login">ログインして予約</Link>
           </Button>
           <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
             <Link href="#lesson-plans">レッスンプランを見る</Link>
