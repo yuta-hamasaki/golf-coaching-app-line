@@ -1,8 +1,8 @@
 const steps = [
   {
     step: "01",
-    title: "Googleでログイン",
-    description: "Googleアカウントでかんたんログイン。初回は自動登録されます。",
+    title: "LINEでログイン",
+    description: "LINEアカウントでかんたんログイン。初回は自動登録されます。",
   },
   {
     step: "02",

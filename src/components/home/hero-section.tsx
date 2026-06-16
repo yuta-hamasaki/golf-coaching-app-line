@@ -21,8 +21,8 @@ export function HeroSection() {
         </h1>
 
         <p className="mt-6 text-base leading-7 text-emerald-800/80 sm:text-lg">
-          Googleアカウントでかんたんログイン。
-          LINE連携は任意で、通知受け取りにも便利です。
+          LINEアカウントでかんたんログイン。
+          予約通知の確認にも便利です。
           あなたのゴルフを次のステージへ。
         </p>
 

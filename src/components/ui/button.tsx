@@ -11,8 +11,6 @@ const buttonVariants = cva(
       variant: {
         default: "bg-emerald-700 text-white hover:bg-emerald-800",
         line: "bg-[#06C755] text-white hover:bg-[#05b34c]",
-        google:
-          "border border-slate-200 bg-white text-slate-800 shadow-sm hover:bg-slate-50",
         outline:
           "border border-emerald-200 bg-white text-emerald-900 hover:bg-emerald-50",
         ghost: "text-emerald-800 hover:bg-emerald-50",

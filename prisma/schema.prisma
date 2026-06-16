@@ -59,7 +59,6 @@ model User {
   name         String
   email        String?  @unique
   passwordHash String?  @map("password_hash")
-  googleId     String?  @unique @map("google_id")
   phone        String?
   lineUserId   String?  @unique @map("line_user_id")
   createdAt    DateTime @default(now()) @map("created_at")
