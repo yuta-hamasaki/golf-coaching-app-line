@@ -32,9 +32,11 @@ export async function GET(request: NextRequest) {
     });
 
     return response;
-  } catch {
+  } catch (error) {
+    console.error("LINE OAuth start error:", error);
+
     return NextResponse.redirect(
-      new URL("/login?error=oauth_failed", process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+      new URL("/login?error=oauth_config_failed", process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
     );
   }
 }
