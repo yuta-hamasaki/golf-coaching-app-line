@@ -28,12 +28,14 @@ type AvailabilityFormProps = {
   coaches: Pick<Coach, "id" | "name">[];
   slot?: SlotData;
   onSuccess?: () => void;
+  hideCoachSelect?: boolean;
 };
 
 export function AvailabilityForm({
   coaches,
   slot,
   onSuccess,
+  hideCoachSelect = false,
 }: AvailabilityFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -65,22 +67,28 @@ export function AvailabilityForm({
         </div>
       ) : null}
 
-      <div className="space-y-2">
-        <Label htmlFor="coachId">コーチ</Label>
-        <select
-          id="coachId"
-          name="coachId"
-          defaultValue={slot?.coachId ?? coaches[0]?.id}
-          required
-          className="flex h-11 w-full rounded-lg border border-emerald-200 bg-white px-3 text-sm"
-        >
-          {coaches.map((coach) => (
-            <option key={coach.id} value={coach.id}>
-              {coach.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      {hideCoachSelect ? (
+        <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          管理者アカウントと統合されたコーチとして登録されます。
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <Label htmlFor="coachId">コーチ</Label>
+          <select
+            id="coachId"
+            name="coachId"
+            defaultValue={slot?.coachId ?? coaches[0]?.id}
+            required
+            className="flex h-11 w-full rounded-lg border border-emerald-200 bg-white px-3 text-sm"
+          >
+            {coaches.map((coach) => (
+              <option key={coach.id} value={coach.id}>
+                {coach.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="date">日付</Label>

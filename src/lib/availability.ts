@@ -66,10 +66,11 @@ export async function getOpenAvailabilitySlotsForDate(
   });
 }
 
-export async function getAllAvailabilitySlots(): Promise<
-  AvailabilitySlotWithCoach[]
-> {
+export async function getAllAvailabilitySlots(
+  coachId?: string,
+): Promise<AvailabilitySlotWithCoach[]> {
   return prisma.availabilitySlot.findMany({
+    where: coachId ? { coachId } : undefined,
     include: {
       coach: { select: { id: true, name: true } },
       booking: { select: { id: true, status: true } },
