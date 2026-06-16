@@ -17,6 +17,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   oauth_verify_failed: "ユーザー情報の取得に失敗しました。",
   oauth_user_failed: "ユーザー登録に失敗しました。",
   oauth_failed: "ログイン処理中にエラーが発生しました。",
+  oauth_config_failed: "LINEログイン設定に不備があります。管理者にお問い合わせください。",
   oauth_link_requires_login: "連携には先にログインが必要です。",
   google_already_linked: "このGoogleアカウントは既に別のユーザーに連携されています。",
   line_already_linked: "このLINEアカウントは既に別のユーザーに連携されています。",
