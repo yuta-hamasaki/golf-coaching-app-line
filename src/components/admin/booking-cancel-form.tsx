@@ -11,18 +11,10 @@ type ActionState = { error?: string; success?: string } | null;
 export function BookingCancelForm({ bookingId }: { bookingId: string }) {
   const [state, formAction, isPending] = useActionState(
     async (_prev: ActionState, formData: FormData): Promise<ActionState> => {
-      try {
-        const result = await cancelBooking(bookingId, formData);
-        if (!result.success)
-          return { error: result.error ?? "キャンセルに失敗しました" };
-        return { success: "予約をキャンセルしました" };
-      } catch (error) {
-        console.error("Failed to request booking cancellation", error);
-        return {
-          error:
-            "予約のキャンセルに失敗しました。時間をおいて再度お試しください。",
-        };
-      }
+      const result = await cancelBooking(bookingId, formData);
+      if (!result.success)
+        return { error: result.error ?? "キャンセルに失敗しました" };
+      return { success: "予約をキャンセルしました" };
     },
     null,
   );

@@ -31,19 +31,11 @@ export function BookingChangeForm({
   const [selectedSlotId, setSelectedSlotId] = useState("");
   const [state, formAction, isPending] = useActionState(
     async (_prev: ActionState, formData: FormData): Promise<ActionState> => {
-      try {
-        const result = await action(bookingId, formData);
-        if (!result.success)
-          return { error: result.error ?? "変更に失敗しました" };
-        setSelectedSlotId("");
-        return { success: "予約日時を変更しました" };
-      } catch (error) {
-        console.error("Failed to request booking change", error);
-        return {
-          error:
-            "予約日時の変更に失敗しました。時間をおいて再度お試しください。",
-        };
-      }
+      const result = await action(bookingId, formData);
+      if (!result.success)
+        return { error: result.error ?? "変更に失敗しました" };
+      setSelectedSlotId("");
+      return { success: "予約日時を変更しました" };
     },
     null,
   );
