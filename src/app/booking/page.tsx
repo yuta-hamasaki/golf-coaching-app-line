@@ -95,6 +95,9 @@ export default async function BookingPage() {
 
             <div className="flex flex-col gap-2 border-t border-emerald-100 pt-4">
               <Button asChild variant="outline" className="w-full">
+                <Link href="/bookings">予約を確認・変更する</Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full">
                 <Link href="/">トップページに戻る</Link>
               </Button>
               <LogoutButton />
