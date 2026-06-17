@@ -80,93 +80,14 @@ export async function updateBookingSlot(
   return { success: true };
 }
 
-type CancellableBooking = NonNullable<
-  Awaited<ReturnType<typeof getCancellableBooking>>
->;
-
-async function getCancellableBooking(bookingId: string) {
-  return prisma.booking.findUnique({
-    where: { id: bookingId },
-    include: {
-      availabilitySlot: {
-        select: {
-          coachId: true,
-          startTime: true,
-          endTime: true,
-          isOpen: true,
-        },
-      },
-    },
-  });
-}
-
-async function createReplacementSlotIfNeeded(booking: CancellableBooking) {
-  const slot = booking.availabilitySlot;
-  if (!slot?.isOpen) return;
-
-  await prisma.$transaction(async (tx) => {
-    const existingOpenSlot = await tx.availabilitySlot.findFirst({
-      where: {
-        coachId: slot.coachId,
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        isOpen: true,
-        booking: null,
-      },
-      select: { id: true },
-    });
-
-    if (existingOpenSlot) return;
-
-    await tx.availabilitySlot.create({
-      data: {
-        coachId: slot.coachId,
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        isOpen: true,
-      },
-    });
-  });
-}
-
-async function cancelBookingWithSlotRelease(
-  booking: CancellableBooking,
-  cancelReason: string,
-) {
-  await prisma.booking.update({
-    where: { id: booking.id },
-    data: {
-      status: BookingStatus.CANCELLED,
-      cancelReason,
-      availabilitySlotId: null,
-    },
-  });
-}
-
-async function cancelBookingWithoutNullableSlot(
-  booking: CancellableBooking,
-  cancelReason: string,
-) {
-  await createReplacementSlotIfNeeded(booking);
-  await prisma.booking.update({
-    where: { id: booking.id },
-    data: {
-      status: BookingStatus.CANCELLED,
-      cancelReason,
-    },
-  });
-}
-
 export async function cancelBooking(
   bookingId: string,
   formData: FormData,
 ): Promise<ActionResult> {
   await requireAdmin();
 
-  const cancelReason =
-    String(formData.get("cancelReason") ?? "").trim() ||
-    "管理者によるキャンセル";
-  const booking = await getCancellableBooking(bookingId);
+  const cancelReason = String(formData.get("cancelReason") ?? "").trim();
+  const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
   if (!booking) {
     return { success: false, error: "予約が見つかりません" };
   }
@@ -175,12 +96,14 @@ export async function cancelBooking(
     return { success: false, error: "既にキャンセル済みです" };
   }
 
-  try {
-    await cancelBookingWithSlotRelease(booking, cancelReason);
-  } catch (error) {
-    console.error("Failed to cancel booking with nullable slot release", error);
-    await cancelBookingWithoutNullableSlot(booking, cancelReason);
-  }
+  await prisma.booking.update({
+    where: { id: bookingId },
+    data: {
+      status: BookingStatus.CANCELLED,
+      cancelReason: cancelReason || "管理者によるキャンセル",
+      availabilitySlotId: null,
+    },
+  });
 
   revalidateBookingPages();
   return { success: true };
