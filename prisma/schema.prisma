@@ -127,7 +127,7 @@ model Booking {
   userId                String        @map("user_id")
   coachId               String        @map("coach_id")
   lessonPlanId          String        @map("lesson_plan_id")
-  availabilitySlotId    String        @unique @map("availability_slot_id")
+  availabilitySlotId    String?       @unique @map("availability_slot_id")
   startTime             DateTime      @map("start_time")
   endTime               DateTime      @map("end_time")
   status                BookingStatus @default(PENDING)
@@ -140,7 +140,7 @@ model Booking {
   user              User               @relation(fields: [userId], references: [id], onDelete: Restrict)
   coach             Coach              @relation(fields: [coachId], references: [id], onDelete: Restrict)
   lessonPlan        LessonPlan         @relation(fields: [lessonPlanId], references: [id], onDelete: Restrict)
-  availabilitySlot  AvailabilitySlot   @relation(fields: [availabilitySlotId], references: [id], onDelete: Restrict)
+  availabilitySlot  AvailabilitySlot?  @relation(fields: [availabilitySlotId], references: [id], onDelete: SetNull)
   payment           Payment?
   lineNotifications LineNotification[]
 

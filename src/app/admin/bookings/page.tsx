@@ -1,10 +1,8 @@
+import { updateBookingSlot } from "@/actions/admin/bookings";
 import { AdminLayout } from "@/components/admin/admin-layout";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { BookingCancelForm } from "@/components/admin/booking-cancel-form";
+import { BookingChangeForm } from "@/components/booking/booking-change-form";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatSlotDateTime } from "@/lib/availability";
 import { formatBookingStatus } from "@/lib/booking";
 import { requireAdmin } from "@/lib/admin-session";
@@ -14,18 +12,30 @@ import { billingTypeLabel, formatPrice } from "@/lib/stripe";
 export default async function AdminBookingsPage() {
   const admin = await requireAdmin();
 
-  const bookings = await prisma.booking.findMany({
-    include: {
-      user: { select: { name: true, email: true } },
-      coach: { select: { name: true } },
-      lessonPlan: {
-        select: { name: true, price: true, billingType: true },
+  const [bookings, openSlots] = await Promise.all([
+    prisma.booking.findMany({
+      include: {
+        user: { select: { name: true, email: true } },
+        coach: { select: { name: true } },
+        lessonPlan: {
+          select: { name: true, price: true, billingType: true },
+        },
+        payment: { select: { status: true, amount: true } },
       },
-      payment: { select: { status: true, amount: true } },
-    },
-    orderBy: { startTime: "desc" },
-    take: 100,
-  });
+      orderBy: { startTime: "desc" },
+      take: 100,
+    }),
+    prisma.availabilitySlot.findMany({
+      where: {
+        isOpen: true,
+        startTime: { gte: new Date() },
+        booking: null,
+      },
+      include: { coach: { select: { name: true } } },
+      orderBy: { startTime: "asc" },
+      take: 100,
+    }),
+  ]);
 
   return (
     <AdminLayout adminEmail={admin.email}>
@@ -53,7 +63,8 @@ export default async function AdminBookingsPage() {
                       <th className="pb-2 pr-4 font-medium">プラン</th>
                       <th className="pb-2 pr-4 font-medium">金額</th>
                       <th className="pb-2 pr-4 font-medium">予約</th>
-                      <th className="pb-2 font-medium">決済</th>
+                      <th className="pb-2 pr-4 font-medium">決済</th>
+                      <th className="pb-2 font-medium">操作</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -88,12 +99,29 @@ export default async function AdminBookingsPage() {
                         <td className="py-3 pr-4">
                           {formatBookingStatus(booking.status)}
                         </td>
-                        <td className="py-3">
+                        <td className="py-3 pr-4">
                           {booking.payment
                             ? booking.payment.status === "PAID"
                               ? "決済済み"
                               : "未決済"
                             : "-"}
+                        </td>
+                        <td className="min-w-[260px] py-3">
+                          {booking.status === "CANCELLED" ||
+                          booking.status === "EXPIRED" ? (
+                            <span className="text-xs text-slate-500">
+                              操作できません
+                            </span>
+                          ) : (
+                            <div className="space-y-4">
+                              <BookingChangeForm
+                                bookingId={booking.id}
+                                slots={openSlots}
+                                action={updateBookingSlot}
+                              />
+                              <BookingCancelForm bookingId={booking.id} />
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))}
