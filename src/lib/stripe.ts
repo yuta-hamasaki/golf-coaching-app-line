@@ -32,7 +32,7 @@ type CreateCheckoutSessionInput = {
 };
 
 export async function createCheckoutSession(
-  input: CreateCheckoutSessionInput,
+  input: CreateCheckoutSessionInput & { stripeAccountId?: string | null },
 ): Promise<Stripe.Checkout.Session> {
   const stripe = getStripe();
   const appUrl = getAppUrl();
@@ -61,7 +61,7 @@ export async function createCheckoutSession(
       ...baseParams,
       mode: "subscription",
       line_items: [{ price: lessonPlan.stripePriceId, quantity: 1 }],
-    });
+    }, input.stripeAccountId ? { stripeAccount: input.stripeAccountId } : undefined);
   }
 
   return stripe.checkout.sessions.create({
@@ -77,7 +77,25 @@ export async function createCheckoutSession(
         quantity: 1,
       },
     ],
+  }, input.stripeAccountId ? { stripeAccount: input.stripeAccountId } : undefined);
+}
+
+export async function createStripeConnectAccount(email: string) {
+  return getStripe().accounts.create({ type: "standard", email });
+}
+
+export async function createStripeConnectAccountLink(accountId: string) {
+  const appUrl = getAppUrl();
+  return getStripe().accountLinks.create({
+    account: accountId,
+    refresh_url: `${appUrl}/admin/settings?stripe=refresh`,
+    return_url: `${appUrl}/admin/settings?stripe=returned`,
+    type: "account_onboarding",
   });
+}
+
+export async function createStripeLoginLink(accountId: string) {
+  return getStripe().accounts.createLoginLink(accountId);
 }
 
 export function billingTypeLabel(billingType: PlanBillingType): string {

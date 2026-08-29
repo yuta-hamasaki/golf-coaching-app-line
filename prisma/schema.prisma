@@ -76,6 +76,9 @@ model Coach {
   name      String
   email     String   @unique
   bio       String?
+  stripeAccountId       String?  @unique @map("stripe_account_id")
+  stripeChargesEnabled  Boolean  @default(false) @map("stripe_charges_enabled")
+  stripePayoutsEnabled  Boolean  @default(false) @map("stripe_payouts_enabled")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -132,6 +135,8 @@ model Booking {
   endTime               DateTime      @map("end_time")
   status                BookingStatus @default(PENDING)
   cancelReason          String?       @map("cancel_reason")
+  cancelledAt           DateTime?     @map("cancelled_at")
+  expiresAt             DateTime?     @map("expires_at")
   stripeSessionId       String?       @map("stripe_session_id")
   stripePaymentIntentId String?       @map("stripe_payment_intent_id")
   createdAt             DateTime      @default(now()) @map("created_at")
@@ -147,6 +152,7 @@ model Booking {
   @@index([coachId, startTime, endTime, status])
   @@index([userId, status])
   @@index([status, createdAt])
+  @@index([status, expiresAt])
   @@index([stripeSessionId])
   @@index([stripePaymentIntentId])
   @@map("bookings")
@@ -164,6 +170,7 @@ model Payment {
   stripePaymentIntentId   String?       @map("stripe_payment_intent_id")
   stripeSubscriptionId    String?       @map("stripe_subscription_id")
   stripeCustomerId        String?       @map("stripe_customer_id")
+  stripeRefundId          String?       @map("stripe_refund_id")
   paidAt                  DateTime?     @map("paid_at")
   createdAt               DateTime      @default(now()) @map("created_at")
   updatedAt               DateTime      @updatedAt @map("updated_at")
@@ -177,6 +184,14 @@ model Payment {
   @@index([stripeCheckoutSessionId])
   @@index([stripePaymentIntentId])
   @@map("payments")
+}
+
+model StripeWebhookEvent {
+  id          String   @id
+  type        String
+  processedAt DateTime @default(now()) @map("processed_at")
+
+  @@map("stripe_webhook_events")
 }
 
 model AdminUser {

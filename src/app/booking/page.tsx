@@ -15,6 +15,7 @@ import {
 import { getOpenAvailabilitySlotsForDate } from "@/lib/availability";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/session";
+import { expirePendingBookings } from "@/lib/booking-lifecycle";
 
 function getDateRange(days: number): string[] {
   const dates: string[] = [];
@@ -32,6 +33,7 @@ function getDateRange(days: number): string[] {
 }
 
 export default async function BookingPage() {
+  await expirePendingBookings();
   const userId = await getSessionUserId();
 
   if (!userId) {

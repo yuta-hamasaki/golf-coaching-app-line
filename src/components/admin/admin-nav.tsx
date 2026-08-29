@@ -10,6 +10,7 @@ const navItems = [
   { href: "/admin/plans", label: "レッスンプラン" },
   { href: "/admin/availability", label: "空き枠管理" },
   { href: "/admin/bookings", label: "予約一覧" },
+  { href: "/admin/settings", label: "決済設定" },
 ];
 
 export function AdminNav() {

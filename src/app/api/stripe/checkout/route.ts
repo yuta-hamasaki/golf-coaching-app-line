@@ -3,9 +3,11 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/session";
 import { createCheckoutSession } from "@/lib/stripe";
+import { expirePendingBookings } from "@/lib/booking-lifecycle";
 
 export async function POST(request: Request) {
   try {
+    await expirePendingBookings();
     const userId = await getSessionUserId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -24,6 +26,7 @@ export async function POST(request: Request) {
         lessonPlan: true,
         user: { select: { email: true } },
         payment: true,
+        coach: { select: { stripeAccountId: true, stripeChargesEnabled: true } },
       },
     });
 
@@ -38,11 +41,20 @@ export async function POST(request: Request) {
       );
     }
 
+    if (booking.expiresAt && booking.expiresAt <= new Date()) {
+      return NextResponse.json({ error: "予約の仮押さえ期限が切れました" }, { status: 409 });
+    }
+
+    if (booking.coach.stripeAccountId && !booking.coach.stripeChargesEnabled) {
+      return NextResponse.json({ error: "コーチの決済設定が完了していません" }, { status: 503 });
+    }
+
     const session = await createCheckoutSession({
       lessonPlan: booking.lessonPlan,
       bookingId: booking.id,
       userId: booking.userId,
       customerEmail: booking.user.email,
+      stripeAccountId: booking.coach.stripeAccountId,
     });
 
     await prisma.$transaction([
