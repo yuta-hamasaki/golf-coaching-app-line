@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import type { ActionResult } from "@/actions/admin/plans";
 import { hasOverlappingBooking } from "@/lib/booking";
+import { lockBookingResources } from "@/lib/booking-lifecycle";
 import { requireAdmin } from "@/lib/admin-session";
 import { prisma } from "@/lib/prisma";
 
@@ -66,15 +67,35 @@ export async function updateBookingSlot(
     return { success: false, error: "この時間帯は既に予約が入っています" };
   }
 
-  await prisma.booking.update({
-    where: { id: bookingId },
-    data: {
-      coachId: slot.coachId,
-      availabilitySlotId: slot.id,
-      startTime: slot.startTime,
-      endTime: slot.endTime,
-    },
-  });
+  try {
+    await prisma.$transaction(async (tx) => {
+      await lockBookingResources(tx, [`booking:${bookingId}`, `slot:${slot.id}`]);
+      const freshSlot = await tx.availabilitySlot.findUnique({
+        where: { id: slot.id },
+        include: { booking: { select: { id: true } } },
+      });
+      if (!freshSlot?.isOpen || (freshSlot.booking && freshSlot.booking.id !== bookingId)) {
+        throw new Error("BOOKING_SLOT_TAKEN");
+      }
+      const conflict = await tx.booking.findFirst({
+        where: {
+          id: { not: bookingId }, coachId: slot.coachId,
+          status: { in: ACTIVE_STATUSES },
+          startTime: { lt: slot.endTime }, endTime: { gt: slot.startTime },
+        },
+      });
+      if (conflict) throw new Error("BOOKING_SLOT_TAKEN");
+      await tx.booking.update({
+        where: { id: bookingId },
+        data: { coachId: slot.coachId, availabilitySlotId: slot.id, startTime: slot.startTime, endTime: slot.endTime },
+      });
+    }, { isolationLevel: "Serializable" });
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("BOOKING_SLOT_TAKEN")) {
+      return { success: false, error: "この枠は直前に予約されました" };
+    }
+    throw error;
+  }
 
   revalidateBookingPages();
   return { success: true };

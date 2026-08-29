@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import type { ActionResult } from "@/actions/admin/plans";
 import { hasOverlappingBooking } from "@/lib/booking";
+import { getBookingExpiry, lockBookingResources } from "@/lib/booking-lifecycle";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/session";
 import { createBookingSchema } from "@/lib/validations";
@@ -40,13 +41,6 @@ export async function createBooking(
     return { success: false, error: "選択したレッスンプランは利用できません" };
   }
 
-  if (lessonPlan.billingType !== "ONE_TIME") {
-    return {
-      success: false,
-      error: "現在、買い切りプランのみ予約できます",
-    };
-  }
-
   if (!slot || !slot.isOpen) {
     return { success: false, error: "選択した空き枠は利用できません" };
   }
@@ -66,6 +60,26 @@ export async function createBooking(
   }
 
   const booking = await prisma.$transaction(async (tx) => {
+    await lockBookingResources(tx, [`slot:${slot.id}`, `coach:${slot.coachId}`]);
+    const currentSlot = await tx.availabilitySlot.findUnique({
+      where: { id: slot.id },
+      include: { booking: true },
+    });
+    if (!currentSlot?.isOpen || currentSlot.booking) {
+      throw new Error("BOOKING_SLOT_TAKEN");
+    }
+
+    const conflicting = await tx.booking.findFirst({
+      where: {
+        coachId: slot.coachId,
+        status: { in: [BookingStatus.PENDING, BookingStatus.PAID, BookingStatus.CONFIRMED] },
+        startTime: { lt: slot.endTime },
+        endTime: { gt: slot.startTime },
+      },
+      select: { id: true },
+    });
+    if (conflicting) throw new Error("BOOKING_SLOT_TAKEN");
+
     const created = await tx.booking.create({
       data: {
         userId,
@@ -75,6 +89,7 @@ export async function createBooking(
         startTime: slot.startTime,
         endTime: slot.endTime,
         status: BookingStatus.PENDING,
+        expiresAt: getBookingExpiry(),
       },
     });
 
@@ -85,12 +100,24 @@ export async function createBooking(
         amount: lessonPlan.price,
         currency: "jpy",
         status: PaymentStatus.PENDING,
-        type: PaymentType.ONE_TIME,
+        type:
+          lessonPlan.billingType === "SUBSCRIPTION"
+            ? PaymentType.SUBSCRIPTION
+            : PaymentType.ONE_TIME,
       },
     });
 
     return created;
+  }, { isolationLevel: "Serializable" }).catch((error: unknown) => {
+    if (error instanceof Error && error.message.includes("BOOKING_SLOT_TAKEN")) {
+      return null;
+    }
+    throw error;
   });
+
+  if (!booking) {
+    return { success: false, error: "この枠は直前に予約されました。別の枠を選択してください" };
+  }
 
   redirect(`/booking/confirm?bookingId=${booking.id}`);
 }

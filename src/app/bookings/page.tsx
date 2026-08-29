@@ -17,8 +17,10 @@ import { formatBookingStatus } from "@/lib/booking";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/session";
 import { billingTypeLabel, formatPrice } from "@/lib/stripe";
+import { expirePendingBookings } from "@/lib/booking-lifecycle";
 
 export default async function MyBookingsPage() {
+  await expirePendingBookings();
   const userId = await getSessionUserId();
   if (!userId) redirect("/login");
 
@@ -114,6 +116,9 @@ export default async function MyBookingsPage() {
                           ) : null}
                         </div>
                         <div>
+                          <Button asChild size="sm" variant="outline" className="mb-3">
+                            <Link href={`/bookings/${booking.id}`}>予約詳細</Link>
+                          </Button>
                           {canChange ? (
                             <BookingChangeForm
                               bookingId={booking.id}
